@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#163a2a">
+  <meta name="description" content="AI-powered educational plant leaf disease classification demo.">
+  <title>LeafLens AI | Plant Disease Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="LeafLens AI home">
+        <span class="brand-mark" aria-hidden="true">✦</span>
+        <span>LeafLens<span class="brand-ai"> AI</span></span>
+      </a>
+      <div class="topbar-right">
+        <span class="status-dot {{ 'is-ready' if model_ready else 'is-pending' }}"></span>
+        <span class="model-status">{{ 'Model ready' if model_ready else 'Model setup required' }}</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-leaf">❧</span> AI FOR SMARTER AGRICULTURE</div>
+          <h1>A clearer view of<br><span>plant health.</span></h1>
+          <p class="hero-description">Upload a leaf photo to see which plant-health category your trained AI model finds most likely, with confidence scores and practical next steps.</p>
+          <div class="hero-pills">
+            <span><span class="pill-check">✓</span> Image classification</span>
+            <span><span class="pill-check">✓</span> Top 3 matches</span>
+            <span><span class="pill-check">✓</span> Instant results</span>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="art-orbit orbit-one"></div>
+          <div class="art-orbit orbit-two"></div>
+          <div class="plant-illustration">
+            <div class="plant-stem"></div>
+            <div class="leaf leaf-a"></div>
+            <div class="leaf leaf-b"></div>
+            <div class="leaf leaf-c"></div>
+            <div class="leaf leaf-d"></div>
+            <div class="leaf leaf-e"></div>
+            <div class="leaf leaf-f"></div>
+            <div class="plant-pot"></div>
+          </div>
+          <div class="floating-note note-top"><span>✳</span> Plant wellness</div>
+          <div class="floating-note note-bottom"><span class="tiny-signal"></span> AI-powered analysis</div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Leaf image analysis">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">START YOUR ANALYSIS</p>
+            <h2>Check a leaf</h2>
+          </div>
+          <span class="step-label"><span>01</span> Upload <i>→</i> <span>02</span> Analyze</span>
+        </div>
+
+        <div class="main-grid">
+          <section class="upload-card card">
+            <div class="card-heading">
+              <span class="icon-tile" aria-hidden="true">↥</span>
+              <div><h3>Upload leaf image</h3><p>Choose a clear photo of one leaf.</p></div>
+            </div>
+            <form id="uploadForm">
+              <input id="leafImage" name="leaf_image" type="file" accept="image/jpeg,image/png,image/webp,image/bmp" hidden>
+              <label id="dropZone" class="drop-zone" for="leafImage" tabindex="0">
+                <div id="uploadPlaceholder" class="upload-placeholder">
+                  <div class="upload-symbol" aria-hidden="true">
+                    <svg viewBox="0 0 52 52" role="img"><path d="M26 35V12m0 0-8 8m8-8 8 8"/><path d="M13 29v11a4 4 0 0 0 4 4h18a4 4 0 0 0 4-4V29"/></svg>
+                  </div>
+                  <strong>Drop your leaf photo here</strong>
+                  <span>or <em>browse files</em> on your device</span>
+                  <small>JPG, PNG, WEBP or BMP · up to 10 MB</small>
+                </div>
+                <div id="previewWrap" class="preview-wrap" hidden>
+                  <img id="imagePreview" alt="Selected leaf preview">
+                  <div class="preview-caption"><span id="fileName">leaf-photo.jpg</span><span class="change-photo">Change photo</span></div>
+                </div>
+              </label>
+              <div class="upload-tip"><span class="tip-icon">✦</span><p><strong>For best results:</strong> use a sharp, well-lit photo with the leaf filling most of the frame.</p></div>
+              <button id="analyzeButton" class="primary-button" type="submit" {% if not model_ready %}disabled{% endif %}>
+                <span class="button-text">Analyze leaf <span aria-hidden="true">↗</span></span>
+                <span class="button-loading" hidden><span class="spinner"></span> Analyzing image…</span>
+              </button>
+              {% if not model_ready %}
+              <p class="setup-hint">The website is ready, but predictions require a trained model. Follow the setup steps in <code>README.md</code>.</p>
+              {% endif %}
+            </form>
+            <div id="errorMessage" class="error-message" role="alert" hidden></div>
+          </section>
+
+          <section class="result-card card" aria-live="polite">
+            <div class="card-heading result-heading">
+              <span class="icon-tile result-icon" aria-hidden="true">⌁</span>
+              <div><h3>Analysis results</h3><p>Your model's closest visual match.</p></div>
+            </div>
+            <div id="emptyResult" class="empty-result">
+              <div class="result-graphic" aria-hidden="true">
+                <div class="graphic-ring ring-outer"></div><div class="graphic-ring ring-inner"></div>
+                <div class="graphic-leaf"><span></span></div>
+                <div class="scan-line"></div>
+              </div>
+              <h4>Your result will appear here</h4>
+              <p>Upload a leaf photo and start the analysis to see the predicted category and model confidence.</p>
+              <div class="result-empty-tags"><span>Predicted class</span><span>Confidence score</span></div>
+            </div>
+            <div id="resultContent" class="result-content" hidden>
+              <div class="prediction-label-row"><span id="statusChip" class="status-chip">Prediction</span><span id="confidenceLabel" class="confidence-label">0% confidence</span></div>
+              <h4 id="predictionTitle" class="prediction-title">Tomato — Early blight</h4>
+              <p id="predictionSubtitle" class="prediction-subtitle">Predicted category</p>
+              <div class="confidence-track"><div id="confidenceBar" class="confidence-fill" style="width:0%"></div></div>
+              <div class="result-divider"></div>
+              <div class="top-matches-heading"><h5>Top model matches</h5><span>Ranked by score</span></div>
+              <div id="topPredictions" class="top-predictions"></div>
+              <div class="advice-box"><div class="advice-title"><span aria-hidden="true">✦</span><strong>Suggested next steps</strong></div><p id="adviceIntro"></p><ul id="adviceList"></ul></div>
+              <p id="disclaimer" class="disclaimer"></p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="how-it-works">
+        <div class="how-heading"><p class="section-kicker">SIMPLE BY DESIGN</p><h2>How it works</h2><p>A small workflow powered by a trained image-classification model.</p></div>
+        <div class="steps-grid">
+          <article class="step-card"><div class="step-number">01</div><div class="step-icon">▧</div><h3>Upload a photo</h3><p>Select a clear image of a plant leaf from your device.</p></article>
+          <article class="step-card"><div class="step-number">02</div><div class="step-icon">⌘</div><h3>AI analyzes it</h3><p>MobileNetV2 compares visual patterns learned from labeled training images.</p></article>
+          <article class="step-card"><div class="step-number">03</div><div class="step-icon">☷</div><h3>Review the result</h3><p>Explore likely categories, confidence scores, and general guidance.</p></article>
+        </div>
+      </section>
+
+      <section class="important-note"><span aria-hidden="true">ⓘ</span><p><strong>Important:</strong> this is an educational decision-support demo, not a definitive diagnosis. PlantVillage images often have plain backgrounds; real-world field photos may perform differently. Confirm disease concerns with a qualified local agricultural expert.</p></section>
+    </main>
+
+    <footer class="footer"><a class="brand footer-brand" href="/"><span class="brand-mark" aria-hidden="true">✦</span><span>LeafLens<span class="brand-ai"> AI</span></span></a><span>AI Plant Disease Detection · Student project</span><a href="https://github.com/spMohanty/PlantVillage-Dataset" target="_blank" rel="noreferrer">PlantVillage dataset ↗</a></footer>
+  </div>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>
